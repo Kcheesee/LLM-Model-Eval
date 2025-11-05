@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.models import EvaluationRun, TestCase, ModelResponse as DBModelResponse
 from app.providers import AnthropicProvider, OpenAIProvider, GoogleProvider, BaseProvider
 from app.config import get_settings
+from app.constitutional import ConstitutionalJudge, DEFAULT_PRINCIPLES
 
 settings = get_settings()
 
@@ -39,6 +40,7 @@ class EvaluationEngine:
         models: List[Dict[str, str]],  # [{"provider": "anthropic", "model": "claude-3-5-sonnet"}]
         temperature: float = 0.7,
         max_tokens: int = 1000,
+        include_constitutional: bool = False,
     ) -> Dict[str, Any]:
         """
         Run evaluation across multiple models and prompts in parallel.
@@ -90,6 +92,10 @@ class EvaluationEngine:
 
             # Run all tasks in parallel
             results = await asyncio.gather(*tasks, return_exceptions=True)
+
+            # Run constitutional evaluation if requested
+            if include_constitutional and eval_run.include_constitutional:
+                await self._run_constitutional_evaluation(db, evaluation_run_id)
 
             # Update evaluation run status
             eval_run.status = "completed"
@@ -223,6 +229,70 @@ class EvaluationEngine:
             "total_responses": len(responses),
             "model_statistics": list(model_stats.values()),
         }
+
+    async def _run_constitutional_evaluation(self, db: Session, evaluation_run_id: int):
+        """
+        Run constitutional AI evaluation on all responses in an evaluation run.
+
+        Uses Claude 3.5 Sonnet as the constitutional judge to evaluate
+        all model responses against ethical principles.
+        """
+        # Get all responses for this evaluation
+        responses = db.query(DBModelResponse).filter(
+            DBModelResponse.evaluation_run_id == evaluation_run_id,
+            DBModelResponse.error_message.is_(None)  # Only evaluate successful responses
+        ).all()
+
+        if not responses:
+            return
+
+        # Initialize constitutional judge (use Claude as judge)
+        if "anthropic" not in self.providers:
+            print("Warning: Constitutional evaluation requires Anthropic API key")
+            return
+
+        judge = ConstitutionalJudge(
+            judge_provider=self.providers["anthropic"],
+            principles=DEFAULT_PRINCIPLES
+        )
+
+        # Evaluate each response
+        for response in responses:
+            try:
+                # Get the test case prompt
+                test_case = db.query(TestCase).filter(TestCase.id == response.test_case_id).first()
+
+                # Run constitutional evaluation
+                evaluation = await judge.evaluate_response(
+                    prompt=test_case.prompt,
+                    response=response.response_text,
+                    model_name=response.model_name,
+                    provider_name=response.provider
+                )
+
+                # Store results in database
+                response.constitutional_score = evaluation.overall_score
+                response.constitutional_passed = 1 if evaluation.passed else 0
+                response.constitutional_data = {
+                    "overall_score": evaluation.overall_score,
+                    "passed": evaluation.passed,
+                    "summary": evaluation.summary,
+                    "principle_scores": [
+                        {
+                            "principle_name": ps.principle_name,
+                            "score": ps.score,
+                            "explanation": ps.explanation,
+                            "violations": ps.violations
+                        }
+                        for ps in evaluation.principle_scores
+                    ]
+                }
+
+                db.commit()
+
+            except Exception as e:
+                print(f"Constitutional evaluation failed for response {response.id}: {e}")
+                continue
 
     def get_available_models(self) -> Dict[str, List[str]]:
         """Get all available models from all providers."""

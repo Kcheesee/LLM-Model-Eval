@@ -46,6 +46,7 @@ export const api = {
     models: ModelConfig[];
     temperature?: number;
     max_tokens?: number;
+    include_constitutional?: boolean;
   }): Promise<EvaluationRun> {
     const { data } = await apiClient.post<EvaluationRun>('/api/evaluations', params);
     return data;

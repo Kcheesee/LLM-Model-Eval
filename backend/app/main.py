@@ -79,6 +79,7 @@ async def create_evaluation(
         name=data.name,
         description=data.description,
         status="pending",
+        include_constitutional=1 if data.include_constitutional else 0,
     )
     db.add(eval_run)
     db.commit()
@@ -92,6 +93,7 @@ async def create_evaluation(
         data.models,
         data.temperature,
         data.max_tokens,
+        data.include_constitutional,
     )
 
     return eval_run
@@ -103,6 +105,7 @@ async def run_evaluation_task(
     models: List[dict],
     temperature: float,
     max_tokens: int,
+    include_constitutional: bool = False,
 ):
     """Background task to run evaluation."""
     from app.database import SessionLocal
@@ -116,6 +119,7 @@ async def run_evaluation_task(
             models=models,
             temperature=temperature,
             max_tokens=max_tokens,
+            include_constitutional=include_constitutional,
         )
     finally:
         db.close()

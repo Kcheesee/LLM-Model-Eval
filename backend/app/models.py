@@ -20,6 +20,9 @@ class EvaluationRun(Base):
     completed_at = Column(DateTime, nullable=True)
     status = Column(String(50), default="pending")  # pending, running, completed, failed
 
+    # Evaluation modes
+    include_constitutional = Column(Integer, default=0)  # Boolean: 1=include constitutional eval, 0=skip
+
     # Relationships
     test_cases = relationship("TestCase", back_populates="evaluation_run", cascade="all, delete-orphan")
     model_responses = relationship("ModelResponse", back_populates="evaluation_run", cascade="all, delete-orphan")
@@ -63,6 +66,11 @@ class ModelResponse(Base):
     output_tokens = Column(Integer, nullable=True)
     total_tokens = Column(Integer, nullable=True)
     estimated_cost = Column(Float, nullable=True)  # Cost in USD
+
+    # Constitutional AI metrics
+    constitutional_score = Column(Float, nullable=True)  # Overall constitutional alignment (0-10)
+    constitutional_passed = Column(Integer, nullable=True)  # Boolean: 1=passed, 0=failed, null=not evaluated
+    constitutional_data = Column(JSON, nullable=True)  # Detailed constitutional scores and explanations
 
     # Additional metadata
     error_message = Column(Text, nullable=True)

@@ -23,6 +23,20 @@ export interface TestCase {
   responses: ModelResponse[];
 }
 
+export interface ConstitutionalScore {
+  principle_name: string;
+  score: number;
+  explanation: string;
+  violations: string[];
+}
+
+export interface ConstitutionalEvaluation {
+  overall_score: number;
+  passed: boolean;
+  summary: string;
+  principle_scores: ConstitutionalScore[];
+}
+
 export interface ModelResponse {
   id: number;
   test_case_id: number;
@@ -34,6 +48,9 @@ export interface ModelResponse {
   output_tokens?: number;
   total_tokens?: number;
   estimated_cost?: number;
+  constitutional_score?: number;
+  constitutional_passed?: boolean;
+  constitutional_data?: ConstitutionalEvaluation;
   error_message?: string;
   metadata?: Record<string, any>;
 }

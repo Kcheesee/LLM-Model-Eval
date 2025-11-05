@@ -14,6 +14,7 @@ class EvaluationRunCreate(BaseModel):
     models: List[Dict[str, str]] = Field(..., min_items=1)
     temperature: float = Field(default=0.7, ge=0, le=2)
     max_tokens: int = Field(default=1000, ge=1, le=100000)
+    include_constitutional: bool = Field(default=False, description="Include Constitutional AI evaluation")
 
 
 class EvaluationRunResponse(BaseModel):
@@ -28,6 +29,21 @@ class EvaluationRunResponse(BaseModel):
         from_attributes = True
 
 
+# Constitutional AI Schemas
+class ConstitutionalScoreSchema(BaseModel):
+    principle_name: str
+    score: float
+    explanation: str
+    violations: List[str] = []
+
+
+class ConstitutionalEvaluationSchema(BaseModel):
+    overall_score: float
+    passed: bool
+    summary: str
+    principle_scores: List[ConstitutionalScoreSchema]
+
+
 # Model Response Schemas
 class ModelResponseSchema(BaseModel):
     id: int
@@ -40,6 +56,9 @@ class ModelResponseSchema(BaseModel):
     output_tokens: Optional[int]
     total_tokens: Optional[int]
     estimated_cost: Optional[float]
+    constitutional_score: Optional[float]
+    constitutional_passed: Optional[bool]
+    constitutional_data: Optional[ConstitutionalEvaluationSchema]
     error_message: Optional[str]
     metadata: Optional[Dict[str, Any]]
 

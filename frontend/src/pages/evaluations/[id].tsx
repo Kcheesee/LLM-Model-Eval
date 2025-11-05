@@ -8,6 +8,8 @@ import { useRouter } from 'next/router';
 import { ArrowLeft, Clock, DollarSign, Hash, AlertCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { EvaluationResults, TestCase } from '@/types';
+import ConstitutionalScore from '@/components/ConstitutionalScore';
+import ConstitutionalComparison from '@/components/ConstitutionalComparison';
 
 export default function EvaluationDetail() {
   const router = useRouter();
@@ -143,6 +145,13 @@ export default function EvaluationDetail() {
             <p className="text-slate-300 whitespace-pre-wrap">{currentTestCase.prompt}</p>
           </div>
 
+          {/* Constitutional AI Comparison */}
+          {currentTestCase.responses.some((r) => r.constitutional_data) && (
+            <div className="mb-6">
+              <ConstitutionalComparison responses={currentTestCase.responses} />
+            </div>
+          )}
+
           {/* Side-by-Side Responses */}
           <div>
             <h3 className="text-lg font-semibold text-white mb-4">Model Responses</h3>
@@ -176,11 +185,20 @@ export default function EvaluationDetail() {
                       <p className="text-red-400">{response.error_message}</p>
                     </div>
                   ) : (
-                    <div className="prose prose-invert max-w-none">
-                      <p className="text-slate-300 whitespace-pre-wrap">
-                        {response.response_text}
-                      </p>
-                    </div>
+                    <>
+                      <div className="prose prose-invert max-w-none mb-4">
+                        <p className="text-slate-300 whitespace-pre-wrap">
+                          {response.response_text}
+                        </p>
+                      </div>
+
+                      {/* Constitutional Score (compact) */}
+                      {response.constitutional_data && (
+                        <div className="mt-4 pt-4 border-t border-slate-700">
+                          <ConstitutionalScore data={response.constitutional_data} compact />
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               ))}
