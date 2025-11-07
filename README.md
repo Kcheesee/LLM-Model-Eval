@@ -80,17 +80,20 @@ Visit `http://localhost:3000` to access the application.
 ### Current (MVP)
 - ✅ Multi-model support (Claude Sonnet, GPT-4, Gemini Pro)
 - ✅ Parallel evaluation execution
-- ✅ Basic metrics: response time, token count, cost estimation
+- ✅ Comprehensive metrics: response time, token count, cost estimation
 - ✅ Side-by-side comparison UI
 - ✅ Evaluation history storage
+- ✅ **Constitutional AI Evaluation** - Ethical assessment across 5 principles
+- ✅ Quick evaluation mode for rapid testing
+- ✅ Interactive Constitutional AI info modal
 
 ### Planned (Phase 2)
 - 🔄 Custom evaluation criteria
-- 🔄 Bias and safety scoring
 - 🔄 Batch evaluation from CSV
-- 🔄 Advanced visualizations (charts, graphs)
+- 🔄 Advanced visualizations (trend analysis, comparison charts)
 - 🔄 PDF/CSV export
 - 🔄 Team collaboration features
+- 🔄 API rate limiting and authentication
 
 ## 🔑 API Keys
 
@@ -109,11 +112,13 @@ You'll need API keys from:
 
 ## 🛡️ Responsible AI
 
-Model Eval Studio includes built-in checks for:
-- Bias detection across demographic categories
-- Safety filters for harmful content
-- Transparency in evaluation methodology
-- Cost implications of model choices
+Model Eval Studio includes built-in **Constitutional AI evaluation** powered by Anthropic's framework:
+- **5 Ethical Principles**: Helpfulness, Harmlessness, Honesty, Respect, Clarity
+- **Weighted Scoring**: 0-10 per principle with detailed explanations
+- **Pass/Fail Thresholds**: Automatic quality gates at 7.0/10
+- **Violation Tracking**: Detailed reasoning for any ethical concerns
+- **Model Comparison**: See which models align best with your values
+- **Transparency**: Full visibility into evaluation methodology
 
 ## 🤝 Contributing
 

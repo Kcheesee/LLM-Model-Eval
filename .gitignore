@@ -1,0 +1,50 @@
+# Environment files with secrets
+.env
+.env.local
+.env.docker
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# Node.js
+node_modules/
+.next/
+out/
+*.log
+
+# Database
+*.db
+*.sqlite3
+postgres_data/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker volumes
+volumes/
+
+# Personal notes (exclude demo scripts)
+DEMO_SCRIPT.md
+DEMO_CHECKLIST.md
+
+# Test files
+.coverage
+htmlcov/
+.pytest_cache/
