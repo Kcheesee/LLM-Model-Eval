@@ -43,6 +43,7 @@ volumes/
 # Personal notes (exclude demo scripts)
 DEMO_SCRIPT.md
 DEMO_CHECKLIST.md
+INTERVIEW_FAQ.md
 
 # Test files
 .coverage

@@ -158,7 +158,7 @@ class EvaluationEngine:
                 output_tokens=response.output_tokens,
                 total_tokens=response.total_tokens,
                 estimated_cost=response.estimated_cost,
-                metadata=response.metadata,
+                response_metadata=response.metadata,
             )
             db.add(db_response)
             db.commit()

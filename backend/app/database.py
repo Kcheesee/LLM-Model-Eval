@@ -8,10 +8,13 @@ from app.config import get_settings
 
 settings = get_settings()
 
-# Create database engine
+# Create database engine with optimized connection pooling
 engine = create_engine(
     settings.DATABASE_URL,
     pool_pre_ping=True,  # Verify connections before using
+    pool_size=20,  # Increase from default 5 to handle more concurrent requests
+    max_overflow=40,  # Allow 40 additional connections when pool is full
+    pool_recycle=3600,  # Recycle connections every hour to avoid stale connections
     echo=settings.DEBUG,  # Log SQL queries in debug mode
 )
 

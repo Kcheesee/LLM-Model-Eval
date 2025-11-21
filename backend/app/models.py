@@ -74,7 +74,7 @@ class ModelResponse(Base):
 
     # Additional metadata
     error_message = Column(Text, nullable=True)
-    metadata = Column(JSON, nullable=True)  # Store additional model-specific data
+    response_metadata = Column(JSON, nullable=True)  # Store additional model-specific data (renamed from 'metadata')
 
     # Relationships
     evaluation_run = relationship("EvaluationRun", back_populates="model_responses")

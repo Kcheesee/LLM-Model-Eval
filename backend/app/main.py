@@ -1,7 +1,7 @@
 """
 FastAPI application for Model Eval Studio.
 """
-from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks
+from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session, joinedload
 from typing import List
@@ -19,6 +19,9 @@ from app.schemas import (
     QuickEvaluationResponse,
 )
 from app.evaluation_engine import EvaluationEngine
+from app.security import limiter, rate_limit_exceeded_handler, add_security_headers_middleware, RATE_LIMITS
+from app.cost_analytics import get_cost_analytics
+from slowapi.errors import RateLimitExceeded
 
 settings = get_settings()
 
@@ -29,17 +32,28 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# CORS middleware
+# CORS middleware (Hardened for production)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.allowed_origins_list,
+    allow_origins=settings.allowed_origins_list,  # Whitelist specific origins
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "DELETE"],  # Only allow specific methods
+    allow_headers=["Content-Type", "Authorization"],  # Only allow specific headers
 )
+
+# Security headers middleware
+app.middleware("http")(add_security_headers_middleware)
+
+# Rate limiting
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
 # Initialize evaluation engine
 evaluation_engine = EvaluationEngine()
+
+# Register routers
+from app.routes import cost_analytics
+app.include_router(cost_analytics.router)
 
 
 @app.on_event("startup")
@@ -66,7 +80,9 @@ async def get_available_models():
 
 
 @app.post("/api/evaluations", response_model=EvaluationRunResponse, status_code=201)
+@limiter.limit(RATE_LIMITS["evaluation_create"])
 async def create_evaluation(
+    request: Request,
     data: EvaluationRunCreate,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
@@ -109,7 +125,9 @@ async def run_evaluation_task(
 ):
     """Background task to run evaluation."""
     from app.database import SessionLocal
+    import logging
 
+    # Use context manager to ensure session is properly closed
     db = SessionLocal()
     try:
         await evaluation_engine.run_evaluation(
@@ -121,12 +139,27 @@ async def run_evaluation_task(
             max_tokens=max_tokens,
             include_constitutional=include_constitutional,
         )
+        logging.info(f"Evaluation {evaluation_run_id} completed successfully")
+    except Exception as e:
+        logging.error(f"Evaluation {evaluation_run_id} failed: {str(e)}", exc_info=True)
+        # Update evaluation run status to failed
+        try:
+            from app.models import EvaluationRun
+            eval_run = db.query(EvaluationRun).filter(EvaluationRun.id == evaluation_run_id).first()
+            if eval_run:
+                eval_run.status = "failed"
+                db.commit()
+        except Exception:
+            pass  # Best effort - don't fail if status update fails
+        raise e
     finally:
         db.close()
 
 
 @app.get("/api/evaluations", response_model=List[EvaluationRunResponse])
+@limiter.limit(RATE_LIMITS["list"])
 async def list_evaluations(
+    request: Request,
     skip: int = 0,
     limit: int = 20,
     db: Session = Depends(get_db),
@@ -166,8 +199,13 @@ async def get_evaluation(
         .all()
     )
 
-    # Generate summary
+    # Generate summary with cost analytics
     summary = evaluation_engine._generate_summary(db, evaluation_id)
+    
+    # Add comprehensive cost breakdown
+    cost_analytics = get_cost_analytics()
+    cost_breakdown = cost_analytics.get_evaluation_cost_breakdown(db, evaluation_id)
+    summary["cost_analytics"] = cost_breakdown
 
     return {
         "evaluation_run": eval_run,
@@ -197,7 +235,8 @@ async def delete_evaluation(
 
 
 @app.post("/api/quick-eval", response_model=QuickEvaluationResponse)
-async def quick_evaluation(data: QuickEvaluationRequest):
+@limiter.limit(RATE_LIMITS["quick_eval"])
+async def quick_evaluation(request: Request, data: QuickEvaluationRequest):
     """
     Quick one-off evaluation without saving to database.
     Useful for rapid testing and comparisons.

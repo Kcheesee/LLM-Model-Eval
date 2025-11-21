@@ -89,4 +89,28 @@ export const api = {
     const { data } = await apiClient.post('/api/quick-eval', params);
     return data;
   },
+
+  /**
+   * Get cost breakdown for an evaluation
+   */
+  async getCostBreakdown(evaluationId: number): Promise<any> {
+    const { data } = await apiClient.get(`/api/cost/evaluation/${evaluationId}`);
+    return data;
+  },
+
+  /**
+   * Get cost comparison for an evaluation
+   */
+  async getCostComparison(evaluationId: number): Promise<any> {
+    const { data } = await apiClient.get(`/api/cost/evaluation/${evaluationId}/comparison`);
+    return data;
+  },
+
+  /**
+   * Get current pricing information
+   */
+  async getPricing(): Promise<any> {
+    const { data } = await apiClient.get('/api/cost/pricing');
+    return data;
+  },
 };

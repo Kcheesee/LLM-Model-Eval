@@ -1,7 +1,7 @@
 """
 Pydantic schemas for API request/response validation.
 """
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 
@@ -10,11 +10,31 @@ from datetime import datetime
 class EvaluationRunCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = None
-    prompts: List[str] = Field(..., min_items=1)
-    models: List[Dict[str, str]] = Field(..., min_items=1)
-    temperature: float = Field(default=0.7, ge=0, le=2)
+    prompts: List[str] = Field(..., min_length=1, max_length=100)
+    models: List[Dict[str, str]] = Field(..., min_length=1, max_length=10)
+    temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     max_tokens: int = Field(default=1000, ge=1, le=100000)
     include_constitutional: bool = Field(default=False, description="Include Constitutional AI evaluation")
+    
+    @field_validator('prompts')
+    @classmethod
+    def validate_prompts(cls, v: List[str]) -> List[str]:
+        """Validate that prompts are not empty strings."""
+        for i, prompt in enumerate(v):
+            if not prompt or not prompt.strip():
+                raise ValueError(f"Prompt at index {i} cannot be empty")
+        return v
+    
+    @field_validator('models')
+    @classmethod
+    def validate_models(cls, v: List[Dict[str, str]]) -> List[Dict[str, str]]:
+        """Validate that models have required fields."""
+        for i, model in enumerate(v):
+            if 'provider' not in model or 'model' not in model:
+                raise ValueError(f"Model at index {i} must have 'provider' and 'model' fields")
+            if not model['provider'] or not model['model']:
+                raise ValueError(f"Model at index {i} cannot have empty provider or model")
+        return v
 
 
 class EvaluationRunResponse(BaseModel):
@@ -92,9 +112,26 @@ class AvailableModelsResponse(BaseModel):
 # Quick Evaluation Schema (for simple one-off comparisons)
 class QuickEvaluationRequest(BaseModel):
     prompt: str = Field(..., min_length=1)
-    models: List[Dict[str, str]] = Field(..., min_items=1, max_items=5)
-    temperature: float = Field(default=0.7, ge=0, le=2)
+    models: List[Dict[str, str]] = Field(..., min_length=1, max_length=5)
+    temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     max_tokens: int = Field(default=1000, ge=1, le=100000)
+    
+    @field_validator('prompt')
+    @classmethod
+    def validate_prompt(cls, v: str) -> str:
+        """Validate that prompt is not empty."""
+        if not v.strip():
+            raise ValueError("Prompt cannot be empty")
+        return v
+    
+    @field_validator('models')
+    @classmethod
+    def validate_models(cls, v: List[Dict[str, str]]) -> List[Dict[str, str]]:
+        """Validate that models have required fields."""
+        for i, model in enumerate(v):
+            if 'provider' not in model or 'model' not in model:
+                raise ValueError(f"Model at index {i} must have 'provider' and 'model' fields")
+        return v
 
 
 class QuickEvaluationResponse(BaseModel):
