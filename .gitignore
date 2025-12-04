@@ -40,10 +40,14 @@ Thumbs.db
 # Docker volumes
 volumes/
 
-# Personal notes (exclude demo scripts)
+# Personal notes (exclude demo scripts & interview materials)
 DEMO_SCRIPT.md
 DEMO_CHECKLIST.md
 INTERVIEW_FAQ.md
+PROJECT_SUMMARY.md
+*INTERVIEW*
+*DEMO*
+*PORTFOLIO*
 
 # Test files
 .coverage

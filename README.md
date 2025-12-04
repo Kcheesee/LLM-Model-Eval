@@ -122,14 +122,8 @@ Model Eval Studio includes built-in **Constitutional AI evaluation** powered by 
 
 ## 🤝 Contributing
 
-This is a portfolio/demo project. For questions or suggestions, contact the author.
+Contributions welcome! Please fork the repository and submit a pull request.
 
 ## 📄 License
 
-MIT License - feel free to use this for inspiration or learning!
-
----
-
-**Built by**: Kareem (Jack) Almac
-**Portfolio**: [Your portfolio URL]
-**Contact**: [Your email/LinkedIn]
+MIT License - see LICENSE file for details.
